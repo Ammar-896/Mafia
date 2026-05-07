@@ -329,8 +329,9 @@ let selK=null, selD=null, selS=null, selV=null;
 let cfg={mafiaCount:1,detective:true,doctor:true};
 const L={};
 
-let myId = localStorage.getItem('mafiaId');
-if (!myId) { myId='p_'+Math.random().toString(36).substr(2,10); localStorage.setItem('mafiaId',myId); }
+// sessionStorage gives each tab its own ID — fixes multi-player in same browser
+let myId = sessionStorage.getItem('mafiaId');
+if (!myId) { myId='p_'+Math.random().toString(36).substr(2,10); sessionStorage.setItem('mafiaId',myId); }
 
 function on(k,ref,ev,fn){ off(k); ref.on(ev,fn); L[k]={ref,ev,fn}; }
 function off(k){ if(L[k]){ L[k].ref.off(L[k].ev,L[k].fn); delete L[k]; } }
@@ -363,12 +364,14 @@ function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.fro
 async function doCreate() {
   const name = g('h-name').value.trim();
   if (!name){ g('he-err').textContent='Enter your name'; return; }
-  g('he-err').textContent='';
-  room=genCode(); amHost=true; rRef=db.ref('rooms/'+room);
-  await rRef.set({cfg:{mafiaCount:1,detective:true,doctor:true,hostId:myId},gs:{phase:'lobby',round:1,winner:null,nightResult:null,dayResult:null},players:{},nightDone:{},mafiaVotes:{},detectTarget:null,doctorTarget:null,dayVotes:{},mafiaChat:{},dayChat:{}});
-  await rRef.child('players/'+myId).set({name,role:null,alive:true,host:true,acked:false});
-  history.pushState({},'','?room='+room);
-  enterLobby();
+  g('he-err').textContent='Creating...';
+  try {
+    room=genCode(); amHost=true; rRef=db.ref('rooms/'+room);
+    await rRef.set({cfg:{mafiaCount:1,detective:true,doctor:true,hostId:myId},gs:{phase:'lobby',round:1,winner:null,nightResult:null,dayResult:null},players:{},nightDone:{},mafiaVotes:{},detectTarget:null,doctorTarget:null,dayVotes:{},mafiaChat:{},dayChat:{}});
+    await rRef.child('players/'+myId).set({name,role:null,alive:true,host:true,acked:false});
+    history.pushState({},'','?room='+room);
+    enterLobby();
+  } catch(e) { g('he-err').textContent='Error: '+e.message; }
 }
 
 async function doJoin() {
@@ -377,14 +380,16 @@ async function doJoin() {
   if (!name){ g('he-err').textContent='Enter your name'; return; }
   if (code.length!==6){ g('he-err').textContent='Enter a valid 6-character code'; return; }
   g('he-err').textContent='Joining...';
-  const snap = await db.ref('rooms/'+code).once('value');
-  if (!snap.exists()){ g('he-err').textContent='Room not found'; return; }
-  const d = snap.val();
-  if (d.gs.phase!=='lobby'){ g('he-err').textContent='Game already in progress'; return; }
-  room=code; amHost=d.cfg.hostId===myId; rRef=db.ref('rooms/'+code);
-  await rRef.child('players/'+myId).set({name,role:null,alive:true,host:amHost,acked:false});
-  history.pushState({},'','?room='+room);
-  enterLobby();
+  try {
+    const snap = await db.ref('rooms/'+code).once('value');
+    if (!snap.exists()){ g('he-err').textContent='Room not found'; return; }
+    const d = snap.val();
+    if (d.gs.phase!=='lobby'){ g('he-err').textContent='Game already in progress'; return; }
+    room=code; amHost=false; rRef=db.ref('rooms/'+code);
+    await rRef.child('players/'+myId).set({name,role:null,alive:true,host:false,acked:false});
+    history.pushState({},'','?room='+room);
+    enterLobby();
+  } catch(e) { g('he-err').textContent='Error: '+e.message; }
 }
 
 // ══════════════════════════════════════
@@ -449,11 +454,11 @@ async function doStart() {
   const ids = Object.keys(ps).sort(()=>Math.random()-.5);
   const mc=cfg.mafiaCount, useD=cfg.detective, useDoc=cfg.doctor;
   const roles={};
-  let extra=0;
+  let detAssigned=false, docAssigned=false;
   ids.forEach((id,i)=>{
     if (i<mc) roles[id]='mafia';
-    else if (useD&&extra===0){roles[id]='detective';extra++;}
-    else if (useDoc&&extra<=1){roles[id]='doctor';extra++;}
+    else if (useD&&!detAssigned){roles[id]='detective';detAssigned=true;}
+    else if (useDoc&&!docAssigned){roles[id]='doctor';docAssigned=true;}
     else roles[id]='villager';
   });
   const up={};
@@ -597,8 +602,11 @@ async function enterDay() {
   if (!amAlive){ g('d-chat-row').style.display='none'; g('d-vote-card').innerHTML=`<div class="ib" style="text-align:center">☠️ You are dead. Watch silently.</div>`; }
   renderVotes(ps);
   setupDayChat();
+  // All players watch vote counts for live UI updates
+  watchDayVotesUI(ps);
+  // Only host resolves the result
   if (amHost) watchDayVotes(ps);
-  on('dph', rRef.child('gs'), 'value', snap=>{ const gs2=snap.val()||{}; if(gs2.phase==='game_over'){off('dph');loadOver();} else if(gs2.phase==='night'){off('dph');round=gs2.round||round;enterNight();} });
+  on('dph', rRef.child('gs'), 'value', snap=>{ const gs2=snap.val()||{}; if(gs2.phase==='game_over'){off('dvui');off('dph');loadOver();} else if(gs2.phase==='night'){off('dvui');off('dph');round=gs2.round||round;enterNight();} });
 }
 
 function renderVotes(ps) {
@@ -609,6 +617,16 @@ function renderVotes(ps) {
 
 function pickV(id){ if(myVoteDone)return; selV=id; document.querySelectorAll('.vrow').forEach(e=>e.classList.remove('sv')); const el=g('vr-'+id); if(el)el.classList.add('sv'); const b=g('d-vbtn'); if(b)b.disabled=false; }
 async function castVote(){ if(!selV||myVoteDone)return; myVoteDone=true; const b=g('d-vbtn'); if(b){b.disabled=true;b.textContent='VOTE CAST ✓';} await rRef.child('dayVotes/'+myId).set(selV); }
+
+// UI-only vote watcher — runs for all players so everyone sees counts live
+function watchDayVotesUI(ps) {
+  const alive=Object.entries(ps).filter(([,p])=>p.alive), tot=alive.length;
+  on('dvui', rRef.child('dayVotes'), 'value', snap=>{
+    const v=snap.val()||{}, c={};
+    Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);
+    alive.forEach(([id])=>{ const n=c[id]||0; const vc=g('vc-'+id),vb=g('vb-'+id); if(vc)vc.textContent=n+' vote'+(n!==1?'s':''); if(vb)vb.style.width=(tot>0?n/tot*100:0)+'%'; });
+  });
+}
 
 function watchDayVotes(ps) {
   const alive=Object.entries(ps).filter(([,p])=>p.alive), tot=alive.length, maj=Math.floor(tot/2)+1;
