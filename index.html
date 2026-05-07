@@ -22,25 +22,20 @@
 }
 html,body{min-height:100%;background:var(--bg);color:var(--txt);font-family:'Crimson Pro',serif}
 
-/* CANVAS */
 #cv{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-/* SCREENS */
 .scr{display:none;min-height:100vh;flex-direction:column;padding:18px 16px 30px;max-width:460px;margin:0 auto;position:relative;z-index:1}
 .scr.on{display:flex}
 
-/* TITLE */
 .logo{text-align:center;padding:28px 0 20px}
 .logo-glyph{font-size:3.2rem;display:block;margin-bottom:6px;filter:drop-shadow(0 0 18px var(--gold-glow))}
 .logo h1{font-family:'Playfair Display',serif;font-size:2.8rem;font-weight:900;letter-spacing:.18em;color:var(--gold);text-shadow:0 0 40px var(--gold-glow)}
 .logo p{font-size:.75rem;letter-spacing:.25em;color:var(--txt2);margin-top:4px;text-transform:uppercase}
 
-/* INPUT */
 .inp{width:100%;background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:12px 16px;color:var(--txt);font-size:1rem;font-family:'Crimson Pro',serif;outline:none;transition:border-color .2s}
 .inp:focus{border-color:var(--gold)}
 textarea.inp{resize:none;line-height:1.5}
 
-/* BUTTON */
 .btn{width:100%;padding:13px;border:none;border-radius:var(--r);font-size:.9rem;font-family:'Playfair Display',serif;font-weight:700;letter-spacing:.12em;cursor:pointer;transition:all .2s;text-transform:uppercase}
 .btn:disabled{opacity:.3;cursor:not-allowed}
 .btn-gold{background:var(--gold);color:#000}
@@ -55,18 +50,15 @@ textarea.inp{resize:none;line-height:1.5}
 .btn-blue:not(:disabled):hover{background:var(--blue2)}
 .btn-sm{width:auto;padding:7px 18px;font-size:.78rem}
 
-/* CARD */
 .card{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:14px}
 .lbl{font-size:.68rem;letter-spacing:.2em;color:var(--txt2);text-transform:uppercase;margin-bottom:9px}
 
-/* PHASE HEADER */
 .ph{text-align:center;padding:22px 0 16px}
 .ph-ico{font-size:2.4rem;margin-bottom:6px;display:block;animation:float 3s ease-in-out infinite}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .ph-title{font-family:'Playfair Display',serif;font-size:1.7rem;letter-spacing:.2em;color:var(--gold)}
 .ph-sub{font-size:.72rem;letter-spacing:.15em;color:var(--txt2);margin-top:4px;text-transform:uppercase}
 
-/* PLAYERS */
 .prow{display:flex;align-items:center;gap:11px;padding:10px 13px;background:var(--bg3);border-radius:8px;margin-bottom:7px;border:1px solid var(--b)}
 .prow.dead{opacity:.3;text-decoration:line-through}
 .pav{width:34px;height:34px;border-radius:50%;background:var(--bg);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
@@ -79,7 +71,6 @@ textarea.inp{resize:none;line-height:1.5}
 .t-doctor{color:var(--grn2);background:rgba(58,191,122,.15)}
 .t-villager{color:var(--gold);background:rgba(201,168,76,.1)}
 
-/* ROLE CARD */
 .rc{border-radius:16px;padding:38px 24px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
 .rc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,var(--glow) 0%,transparent 70%);pointer-events:none}
 .rc.mafia{background:linear-gradient(160deg,#160606,#350a0a);border:2px solid var(--red);--glow:rgba(191,58,58,.3)}
@@ -94,19 +85,16 @@ textarea.inp{resize:none;line-height:1.5}
 .rc-name.villager{color:var(--gold2);text-shadow:0 0 20px var(--gold-glow)}
 .rc-desc{color:var(--txt2);font-size:.88rem;line-height:1.75;position:relative;z-index:1}
 
-/* TOGGLES */
 .trow{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
 .tog{width:44px;height:22px;border-radius:11px;background:var(--b);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
 .tog.on{background:var(--grn)}
 .tog::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s}
 .tog.on::after{left:25px}
 
-/* COUNT SELECT */
 .csel{display:flex;gap:8px;margin-top:4px}
 .copt{flex:1;padding:10px;border:1px solid var(--b);background:var(--bg3);color:var(--txt);border-radius:8px;cursor:pointer;text-align:center;font-family:'Playfair Display',serif;font-weight:700;font-size:1rem;transition:all .2s}
 .copt.sel{border-color:var(--gold);background:rgba(201,168,76,.12);color:var(--gold)}
 
-/* CHAT */
 .chat-box{background:var(--bg);border:1px solid var(--b);border-radius:8px;padding:10px;min-height:150px;max-height:220px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column;gap:8px}
 .cm{display:flex;flex-direction:column}
 .cm.me{align-items:flex-end}
@@ -119,7 +107,6 @@ textarea.inp{resize:none;line-height:1.5}
 .csend{background:var(--gold);border:none;border-radius:8px;padding:0 14px;color:#000;cursor:pointer;font-size:1.1rem;flex-shrink:0;transition:background .2s}
 .csend:hover{background:var(--gold2)}
 
-/* NIGHT ACTION ROWS */
 .arow{display:flex;align-items:center;gap:11px;padding:12px 13px;background:var(--bg3);border-radius:8px;margin-bottom:7px;border:1px solid var(--b);cursor:pointer;transition:all .2s}
 .arow:hover{border-color:var(--txt3);background:var(--bg2)}
 .arow.sk{border-color:var(--red);background:rgba(191,58,58,.07)}
@@ -127,7 +114,6 @@ textarea.inp{resize:none;line-height:1.5}
 .arow.ss{border-color:var(--grn);background:rgba(58,191,122,.07)}
 .arow-votes{margin-left:auto;font-size:.75rem;color:var(--txt2)}
 
-/* VOTE ROWS */
 .vrow{display:flex;align-items:center;gap:11px;padding:12px 13px;background:var(--bg3);border-radius:8px;margin-bottom:7px;border:1px solid var(--b);cursor:pointer;transition:all .2s}
 .vrow:hover:not(.nv){border-color:var(--gold);background:rgba(201,168,76,.04)}
 .vrow.sv{border-color:var(--gold);background:rgba(201,168,76,.1)}
@@ -137,19 +123,16 @@ textarea.inp{resize:none;line-height:1.5}
 .vbar{width:56px;height:3px;background:var(--b);border-radius:2px;margin-top:4px}
 .vfill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s}
 
-/* ANNOUNCEMENT */
 .ann{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:22px;text-align:center;margin-bottom:14px}
 .ann-ico{font-size:2.6rem;margin-bottom:10px;display:block}
 .ann-big{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--txt);margin-bottom:5px}
 .ann-sm{font-size:.85rem;color:var(--txt2);line-height:1.6}
 
-/* INFO BOX */
 .ib{background:rgba(201,168,76,.05);border:1px solid rgba(201,168,76,.12);border-radius:8px;padding:11px 14px;font-size:.83rem;color:var(--txt2);margin-bottom:14px;line-height:1.6}
 .ib.red{background:rgba(191,58,58,.05);border-color:rgba(191,58,58,.15)}
 .ib.blue{background:rgba(58,122,191,.05);border-color:rgba(58,122,191,.15)}
 .ib.grn{background:rgba(58,191,122,.05);border-color:rgba(58,191,122,.15)}
 
-/* MISC */
 .err{color:var(--red2);font-size:.82rem;text-align:center;margin-top:8px}
 .code-big{font-family:'Playfair Display',serif;font-size:2.4rem;letter-spacing:.55em;color:var(--gold);text-align:center;font-weight:900;margin:6px 0 14px;text-shadow:0 0 20px var(--gold-glow)}
 .pulse{text-align:center;color:var(--txt2);padding:14px;animation:fp 2s ease-in-out infinite}
@@ -159,54 +142,20 @@ textarea.inp{resize:none;line-height:1.5}
 .gl{margin-bottom:22px}
 .spacer{flex:1}
 
-/* GAME OVER */
 .ov-wrap{text-align:center;padding:40px 0 24px}
 .ov-ico{font-size:5rem;margin-bottom:14px;display:block;animation:float 3s ease-in-out infinite}
 .ov-title{font-family:'Playfair Display',serif;font-size:2.6rem;letter-spacing:.15em;font-weight:900;margin-bottom:8px}
 .ov-sub{color:var(--txt2);font-size:1rem;margin-bottom:28px}
 
-/* SCROLLBAR */
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
 
-/* ROOM CODE INPUT */
 #h-code{text-transform:uppercase;letter-spacing:.3em;font-family:'Playfair Display',serif;font-size:1.1rem}
 </style>
 </head>
 <body>
 
 <canvas id="cv"></canvas>
-
-<!-- ══ SETUP ══ -->
-<div class="scr on" id="s-setup">
-  <div class="logo">
-    <span class="logo-glyph">🎭</span>
-    <h1>MAFIA</h1>
-    <p>Multiplayer Setup</p>
-  </div>
-  <div class="ib">
-    <strong style="color:var(--txt)">One-time Firebase setup for real-time multiplayer:</strong><br><br>
-    1 · Go to <strong>console.firebase.google.com</strong><br>
-    2 · Create project → Add Web App → copy config<br>
-    3 · Enable <strong>Realtime Database</strong> (test mode)<br>
-    4 · Paste config below
-  </div>
-  <div class="card">
-    <div class="lbl">Firebase Config JSON</div>
-    <textarea class="inp" id="fb-in" rows="9" placeholder='{
-  "apiKey": "AIza...",
-  "authDomain": "proj.firebaseapp.com",
-  "databaseURL": "https://proj-rtdb.firebaseio.com",
-  "projectId": "proj",
-  "storageBucket": "proj.appspot.com",
-  "messagingSenderId": "123",
-  "appId": "1:123:web:abc"
-}'></textarea>
-    <div id="se-err" class="err"></div>
-    <br>
-    <button class="btn btn-gold" onclick="doSetup()">CONNECT & ENTER →</button>
-  </div>
-</div>
 
 <!-- ══ HOME ══ -->
 <div class="scr" id="s-home">
@@ -359,6 +308,19 @@ initStars(); drawStars();
 window.addEventListener('resize', initStars);
 
 // ══════════════════════════════════════
+//  FIREBASE — HARDCODED CONFIG
+// ══════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC9lOxSQXzE-D3_RwEsNdv17BWYjKhMzlU",
+  authDomain: "mafia-f8d36.firebaseapp.com",
+  databaseURL: "https://mafia-f8d36-default-rtdb.firebaseio.com",
+  projectId: "mafia-f8d36",
+  storageBucket: "mafia-f8d36.firebasestorage.app",
+  messagingSenderId: "903131682760",
+  appId: "1:903131682760:web:8c1f669b71d4fdcc8a92fd"
+};
+
+// ══════════════════════════════════════
 //  GLOBALS
 // ══════════════════════════════════════
 let db=null, rRef=null;
@@ -378,32 +340,20 @@ function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
 function g(id){ return document.getElementById(id); }
 
 // ══════════════════════════════════════
-//  FIREBASE SETUP
+//  AUTO BOOT ON PAGE LOAD
 // ══════════════════════════════════════
-const saved = localStorage.getItem('mafiaFB');
-if (saved) { try { boot(JSON.parse(saved)); } catch(e){ localStorage.removeItem('mafiaFB'); } }
-
-function doSetup() {
+(function boot() {
   try {
-    const c = JSON.parse(g('fb-in').value.trim());
-    if (!c.databaseURL) throw new Error('Missing databaseURL — enable Realtime Database first.');
-    localStorage.setItem('mafiaFB', JSON.stringify(c));
-    boot(c);
-  } catch(e) { g('se-err').textContent = e.message; }
-}
-
-function boot(c) {
-  try {
-    if (!firebase.apps.length) firebase.initializeApp(c);
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db = firebase.database();
     const rc = new URLSearchParams(location.search).get('room');
     show('home');
     if (rc) g('h-code').value = rc.toUpperCase();
   } catch(e) {
-    if(g('se-err')) g('se-err').textContent = e.message;
-    localStorage.removeItem('mafiaFB');
+    // If boot fails, show an error on home screen
+    document.body.innerHTML = '<div style="color:#e06060;font-family:monospace;padding:30px;text-align:center"><h2>Firebase Error</h2><p style="margin-top:12px">'+e.message+'</p></div>';
   }
-}
+})();
 
 // ══════════════════════════════════════
 //  HOME
