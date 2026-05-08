@@ -49,6 +49,8 @@ textarea.inp{resize:none;line-height:1.5}
 .btn-blue{background:var(--blue);color:#fff}
 .btn-blue:not(:disabled):hover{background:var(--blue2)}
 .btn-sm{width:auto;padding:7px 18px;font-size:.78rem}
+.btn-kick{width:auto;padding:4px 10px;font-size:.7rem;background:rgba(191,58,58,.15);color:var(--red2);border:1px solid rgba(191,58,58,.3);border-radius:6px;cursor:pointer;font-family:'Playfair Display',serif;font-weight:700;letter-spacing:.06em;transition:all .2s;flex-shrink:0}
+.btn-kick:hover{background:rgba(191,58,58,.35);border-color:var(--red2)}
 
 .card{background:var(--bg2);border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:14px}
 .lbl{font-size:.68rem;letter-spacing:.2em;color:var(--txt2);text-transform:uppercase;margin-bottom:9px}
@@ -118,6 +120,9 @@ textarea.inp{resize:none;line-height:1.5}
 .vrow:hover:not(.nv){border-color:var(--gold);background:rgba(201,168,76,.04)}
 .vrow.sv{border-color:var(--gold);background:rgba(201,168,76,.1)}
 .vrow.nv{opacity:.4;pointer-events:none}
+.vrow-skip{border-color:var(--txt3) !important}
+.vrow-skip:hover:not(.nv){border-color:var(--txt2) !important;background:rgba(74,74,106,.12) !important}
+.vrow-skip.sv{border-color:var(--txt) !important;background:rgba(74,74,106,.2) !important}
 .vinfo{margin-left:auto;text-align:right}
 .vcnt{font-size:.75rem;color:var(--txt2)}
 .vbar{width:56px;height:3px;background:var(--b);border-radius:2px;margin-top:4px}
@@ -146,6 +151,17 @@ textarea.inp{resize:none;line-height:1.5}
 .ov-ico{font-size:5rem;margin-bottom:14px;display:block;animation:float 3s ease-in-out infinite}
 .ov-title{font-family:'Playfair Display',serif;font-size:2.6rem;letter-spacing:.15em;font-weight:900;margin-bottom:8px}
 .ov-sub{color:var(--txt2);font-size:1rem;margin-bottom:28px}
+
+/* Timer ring for role reveal */
+.ack-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px}
+.ack-timer{font-family:'Playfair Display',serif;font-size:.85rem;color:var(--txt2);letter-spacing:.1em}
+.ack-timer.urgent{color:var(--red2)}
+.timer-bar{width:100%;height:3px;background:var(--b);border-radius:2px;margin-bottom:4px;overflow:hidden}
+.timer-fill{height:100%;background:var(--gold);border-radius:2px;transition:width 1s linear}
+.timer-fill.urgent{background:var(--red2)}
+
+/* Day vote timer */
+#d-timer{font-family:'Playfair Display',serif;font-size:.85rem;color:var(--txt2);letter-spacing:.08em;text-align:center;margin-bottom:10px}
 
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
@@ -189,7 +205,7 @@ textarea.inp{resize:none;line-height:1.5}
   <div class="card" style="text-align:center">
     <div class="lbl">Room Code</div>
     <div class="code-big" id="l-code">------</div>
-    <button class="btn btn-ghost btn-sm" onclick="doCopy()">📋 Copy Invite Link</button>
+    <button class="btn btn-ghost btn-sm" onclick="doCopy()">📋 Copy Room Code</button>
   </div>
   <div class="card">
     <div class="lbl">Players (<span id="l-cnt">0</span>)</div>
@@ -201,10 +217,18 @@ textarea.inp{resize:none;line-height:1.5}
     <div class="trow"><span>💉 Doctor</span><div class="tog on" id="t-doc" onclick="togRole('doctor')"></div></div>
     <div class="div"></div>
     <div class="lbl">Mafia Count</div>
-    <div class="csel">
+    <div class="csel" id="mafia-count-sel">
       <div class="copt sel" data-n="1" onclick="setM(1)">1</div>
       <div class="copt" data-n="2" onclick="setM(2)">2</div>
       <div class="copt" data-n="3" onclick="setM(3)">3</div>
+    </div>
+    <div class="div"></div>
+    <div class="lbl">Vote Timer</div>
+    <div class="csel" id="vote-timer-sel">
+      <div class="copt" data-t="30" onclick="setVT(30)">30s</div>
+      <div class="copt sel" data-t="60" onclick="setVT(60)">60s</div>
+      <div class="copt" data-t="90" onclick="setVT(90)">90s</div>
+      <div class="copt" data-t="120" onclick="setVT(120)">2m</div>
     </div>
   </div>
   <div id="l-status" class="ib" style="text-align:center"></div>
@@ -224,7 +248,11 @@ textarea.inp{resize:none;line-height:1.5}
     <div class="lbl">🔪 Your Mafia Allies</div>
     <div id="m-mates-list"></div>
   </div>
-  <button class="btn btn-gold" id="ack-btn" onclick="doAck()">I UNDERSTAND MY ROLE</button>
+  <div class="ack-wrap">
+    <div class="timer-bar"><div class="timer-fill" id="ack-fill" style="width:100%"></div></div>
+    <div class="ack-timer" id="ack-timer-lbl">Reading time: 20s</div>
+    <button class="btn btn-gold" id="ack-btn" onclick="doAck()" disabled>I UNDERSTAND MY ROLE</button>
+  </div>
 </div>
 
 <!-- ══ NIGHT ══ -->
@@ -234,6 +262,7 @@ textarea.inp{resize:none;line-height:1.5}
     <div class="ph-title">NIGHT FALLS</div>
     <div class="ph-sub" id="n-round">Round 1</div>
   </div>
+  <div id="n-timer" style="display:none;text-align:center;margin-bottom:10px;font-family:'Playfair Display',serif;font-size:.85rem;color:var(--txt2);letter-spacing:.08em"></div>
   <div id="n-content"></div>
   <div id="n-force" style="display:none;margin-top:8px;text-align:right">
     <button class="btn btn-ghost btn-sm" onclick="forceNight()">⚡ Force Advance</button>
@@ -259,6 +288,7 @@ textarea.inp{resize:none;line-height:1.5}
   </div>
   <div class="card" id="d-vote-card">
     <div class="lbl">Vote to Eliminate</div>
+    <div id="d-timer" style="display:none"></div>
     <div id="d-votes"></div>
     <button class="btn btn-red g" id="d-vbtn" onclick="castVote()" disabled>CAST YOUR VOTE</button>
   </div>
@@ -280,7 +310,7 @@ textarea.inp{resize:none;line-height:1.5}
 
 <script>
 // ══════════════════════════════════════
-//  STARFIELD CANVAS
+//  STARFIELD
 // ══════════════════════════════════════
 const cv = document.getElementById('cv');
 const ctx = cv.getContext('2d');
@@ -308,7 +338,7 @@ initStars(); drawStars();
 window.addEventListener('resize', initStars);
 
 // ══════════════════════════════════════
-//  FIREBASE — HARDCODED CONFIG
+//  FIREBASE CONFIG
 // ══════════════════════════════════════
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyC9lOxSQXzE-D3_RwEsNdv17BWYjKhMzlU",
@@ -324,14 +354,20 @@ const FIREBASE_CONFIG = {
 //  GLOBALS
 // ══════════════════════════════════════
 let db=null, rRef=null;
-let room=null, myRole=null, amHost=false, round=1, myVoteDone=false;
+let room=null, myRole=null, amHost=false, round=1, myVoteDone=false, myAcked=false;
 let selK=null, selD=null, selS=null, selV=null;
-let cfg={mafiaCount:1,detective:true,doctor:true};
+let cfg={mafiaCount:1,detective:true,doctor:true,voteTimer:60};
 const L={};
+let startLock=false;
+let timerInterval=null;
+let ackTimerInterval=null;
+const ACK_SECS=20;
+const NIGHT_SECS=40;
+let nightActionDone=false;
 
-// sessionStorage gives each tab its own ID — fixes multi-player in same browser
+// Each browser tab gets its own unique player ID
 let myId = sessionStorage.getItem('mafiaId');
-if (!myId) { myId='p_'+Math.random().toString(36).substr(2,10); sessionStorage.setItem('mafiaId',myId); }
+if (!myId){ myId='p_'+Math.random().toString(36).substr(2,10); sessionStorage.setItem('mafiaId',myId); }
 
 function on(k,ref,ev,fn){ off(k); ref.on(ev,fn); L[k]={ref,ev,fn}; }
 function off(k){ if(L[k]){ L[k].ref.off(L[k].ev,L[k].fn); delete L[k]; } }
@@ -339,20 +375,21 @@ function offAll(){ Object.keys(L).forEach(off); }
 function show(id){ document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on')); document.getElementById('s-'+id).classList.add('on'); }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function g(id){ return document.getElementById(id); }
+function clearTimer(){ if(timerInterval){clearInterval(timerInterval);timerInterval=null;} }
+function clearAckTimer(){ if(ackTimerInterval){clearInterval(ackTimerInterval);ackTimerInterval=null;} }
 
 // ══════════════════════════════════════
-//  AUTO BOOT ON PAGE LOAD
+//  AUTO BOOT
 // ══════════════════════════════════════
-(function boot() {
-  try {
-    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.database();
-    const rc = new URLSearchParams(location.search).get('room');
+(function boot(){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.database();
     show('home');
-    if (rc) g('h-code').value = rc.toUpperCase();
-  } catch(e) {
-    // If boot fails, show an error on home screen
-    document.body.innerHTML = '<div style="color:#e06060;font-family:monospace;padding:30px;text-align:center"><h2>Firebase Error</h2><p style="margin-top:12px">'+e.message+'</p></div>';
+    const rc=new URLSearchParams(location.search).get('room');
+    if(rc) g('h-code').value=rc.toUpperCase();
+  }catch(e){
+    document.body.innerHTML='<div style="color:#e06060;font-family:monospace;padding:30px;text-align:center"><h2>Firebase Error</h2><p style="margin-top:12px">'+e.message+'</p></div>';
   }
 })();
 
@@ -361,307 +398,499 @@ function g(id){ return document.getElementById(id); }
 // ══════════════════════════════════════
 function genCode(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
 
-async function doCreate() {
-  const name = g('h-name').value.trim();
-  if (!name){ g('he-err').textContent='Enter your name'; return; }
+async function doCreate(){
+  const name=g('h-name').value.trim();
+  if(!name){g('he-err').textContent='Enter your name';return;}
   g('he-err').textContent='Creating...';
-  try {
-    room=genCode(); amHost=true; rRef=db.ref('rooms/'+room);
-    await rRef.set({cfg:{mafiaCount:1,detective:true,doctor:true,hostId:myId},gs:{phase:'lobby',round:1,winner:null,nightResult:null,dayResult:null},players:{},nightDone:{},mafiaVotes:{},detectTarget:null,doctorTarget:null,dayVotes:{},mafiaChat:{},dayChat:{}});
+  try{
+    room=genCode(); amHost=true; startLock=false; rRef=db.ref('rooms/'+room);
+    await rRef.set({
+      cfg:{mafiaCount:1,detective:true,doctor:true,hostId:myId,voteTimer:60},
+      gs:{phase:'lobby',round:1,winner:null,nightResult:null,voteDeadline:null},
+      players:{},nightDone:{},mafiaVotes:{},detectTarget:null,doctorTarget:null,
+      dayVotes:{},mafiaChat:{},dayChat:{}
+    });
     await rRef.child('players/'+myId).set({name,role:null,alive:true,host:true,acked:false});
     history.pushState({},'','?room='+room);
+    g('he-err').textContent='';
     enterLobby();
-  } catch(e) { g('he-err').textContent='Error: '+e.message; }
+  }catch(e){g('he-err').textContent='Error: '+e.message;}
 }
 
-async function doJoin() {
-  const name = g('h-name').value.trim();
-  const code = g('h-code').value.trim().toUpperCase();
-  if (!name){ g('he-err').textContent='Enter your name'; return; }
-  if (code.length!==6){ g('he-err').textContent='Enter a valid 6-character code'; return; }
+async function doJoin(){
+  const name=g('h-name').value.trim();
+  const code=g('h-code').value.trim().toUpperCase();
+  if(!name){g('he-err').textContent='Enter your name';return;}
+  if(code.length!==6){g('he-err').textContent='Enter a valid 6-character code';return;}
   g('he-err').textContent='Joining...';
-  try {
-    const snap = await db.ref('rooms/'+code).once('value');
-    if (!snap.exists()){ g('he-err').textContent='Room not found'; return; }
-    const d = snap.val();
-    if (d.gs.phase!=='lobby'){ g('he-err').textContent='Game already in progress'; return; }
+  try{
+    const snap=await db.ref('rooms/'+code).once('value');
+    if(!snap.exists()){g('he-err').textContent='Room not found';return;}
+    const d=snap.val();
+    if(d.gs.phase!=='lobby'){g('he-err').textContent='Game already in progress';return;}
+    // Check for duplicate name
+    const existing=Object.values(d.players||{});
+    const nameTaken=existing.some(p=>p.name&&p.name.trim().toLowerCase()===name.toLowerCase());
+    if(nameTaken){g('he-err').textContent='That name is already taken in this room';return;}
     room=code; amHost=false; rRef=db.ref('rooms/'+code);
     await rRef.child('players/'+myId).set({name,role:null,alive:true,host:false,acked:false});
     history.pushState({},'','?room='+room);
+    g('he-err').textContent='';
     enterLobby();
-  } catch(e) { g('he-err').textContent='Error: '+e.message; }
+  }catch(e){g('he-err').textContent='Error: '+e.message;}
 }
 
 // ══════════════════════════════════════
 //  LOBBY
 // ══════════════════════════════════════
-function enterLobby() {
+function enterLobby(){
   show('lobby');
-  g('l-code').textContent = room;
-  g('host-panel').style.display = amHost ? '' : 'none';
-  g('l-start').style.display = amHost ? '' : 'none';
-  g('he-err').textContent = '';
+  g('l-code').textContent=room;
+  g('host-panel').style.display=amHost?'':'none';
+  g('l-start').style.display=amHost?'':'none';
 
-  on('lp', rRef.child('players'), 'value', snap => renderLobbyP(snap.val()||{}));
-  on('lc', rRef.child('cfg'), 'value', snap => {
-    const c = snap.val()||{};
-    cfg = {mafiaCount:c.mafiaCount||1, detective:c.detective!==false, doctor:c.doctor!==false};
+  on('lp',rRef.child('players'),'value',snap=>{
+    const ps=snap.val()||{};
+    // Check if we've been kicked
+    if(!ps[myId]){
+      offAll();
+      show('home');
+      g('he-err').textContent='You were removed from the room.';
+      return;
+    }
+    renderLobbyP(ps);
+  });
+  on('lc',rRef.child('cfg'),'value',snap=>{
+    const c=snap.val()||{};
+    cfg={mafiaCount:c.mafiaCount||1,detective:c.detective!==false,doctor:c.doctor!==false,voteTimer:c.voteTimer||60};
     updateCfgUI();
   });
-  on('lph', rRef.child('gs/phase'), 'value', snap => {
-    if (snap.val()==='role_reveal'){ offAll(); enterRoleReveal(); }
+  on('lph',rRef.child('gs/phase'),'value',snap=>{
+    if(snap.val()==='role_reveal'){offAll();enterRoleReveal();}
   });
 }
 
-function renderLobbyP(ps) {
-  const list = Object.entries(ps);
-  g('l-cnt').textContent = list.length;
-  g('l-players').innerHTML = list.map(([id,p])=>`
+function renderLobbyP(ps){
+  const list=Object.entries(ps);
+  g('l-cnt').textContent=list.length;
+  g('l-players').innerHTML=list.map(([id,p])=>`
     <div class="prow">
       <div class="pav">👤</div>
       <div class="pname">${esc(p.name)}</div>
       ${p.host?'<span class="tag t-host">HOST</span>':''}
       ${id===myId?'<span class="tag t-you">YOU</span>':''}
+      ${amHost&&!p.host&&id!==myId?`<button class="btn-kick" onclick="kickPlayer('${id}','${esc(p.name)}')">KICK</button>`:''}
     </div>`).join('');
-  const min = Math.max(4, cfg.mafiaCount+2);
-  if (amHost) {
-    g('l-start').disabled = list.length < min;
-    g('l-status').textContent = list.length<min ? `Need at least ${min} players (${list.length} joined)` : `✓ Ready — ${list.length} players`;
-  } else {
-    g('l-status').textContent = `Waiting for host to start... (${list.length} joined)`;
+  const min=Math.max(4,cfg.mafiaCount+2);
+  if(amHost){
+    g('l-start').disabled=list.length<min;
+    g('l-status').textContent=list.length<min?`Need at least ${min} players (${list.length} joined)`:`✓ Ready — ${list.length} players`;
+  }else{
+    g('l-status').textContent=`Waiting for host to start... (${list.length} joined)`;
   }
 }
 
-function updateCfgUI() {
+async function kickPlayer(id, name){
+  if(!amHost)return;
+  if(!confirm(`Remove ${name} from the room?`))return;
+  await rRef.child('players/'+id).remove();
+}
+
+function updateCfgUI(){
   g('t-det').className='tog'+(cfg.detective?' on':'');
   g('t-doc').className='tog'+(cfg.doctor?' on':'');
-  document.querySelectorAll('.copt').forEach(e=>e.classList.toggle('sel',+e.dataset.n===cfg.mafiaCount));
+  document.querySelectorAll('#mafia-count-sel .copt').forEach(e=>e.classList.toggle('sel',+e.dataset.n===cfg.mafiaCount));
+  document.querySelectorAll('#vote-timer-sel .copt').forEach(e=>e.classList.toggle('sel',+e.dataset.t===cfg.voteTimer));
 }
-
-function togRole(r){ if(!amHost)return; cfg[r]=!cfg[r]; rRef.child('cfg/'+r).set(cfg[r]); updateCfgUI(); }
-function setM(n){ if(!amHost)return; cfg.mafiaCount=n; rRef.child('cfg/mafiaCount').set(n); updateCfgUI(); }
+function togRole(r){if(!amHost)return;cfg[r]=!cfg[r];rRef.child('cfg/'+r).set(cfg[r]);updateCfgUI();}
+function setM(n){if(!amHost)return;cfg.mafiaCount=n;rRef.child('cfg/mafiaCount').set(n);updateCfgUI();}
+function setVT(s){if(!amHost)return;cfg.voteTimer=s;rRef.child('cfg/voteTimer').set(s);updateCfgUI();}
 function doCopy(){
-  const url=location.origin+location.pathname+'?room='+room;
-  navigator.clipboard.writeText(url).then(()=>{ const b=event.currentTarget; b.textContent='✅ Copied!'; setTimeout(()=>b.textContent='📋 Copy Invite Link',2000); });
+  navigator.clipboard.writeText(room).then(()=>{
+    const b=event.currentTarget; b.textContent='✅ Copied: '+room;
+    setTimeout(()=>b.textContent='📋 Copy Room Code',2000);
+  });
 }
 
 // ══════════════════════════════════════
-//  START
+//  START — locked so it can only fire once
 // ══════════════════════════════════════
-async function doStart() {
-  if (!amHost) return;
-  const ps = (await rRef.child('players').once('value')).val()||{};
-  const ids = Object.keys(ps).sort(()=>Math.random()-.5);
-  const mc=cfg.mafiaCount, useD=cfg.detective, useDoc=cfg.doctor;
-  const roles={};
-  let detAssigned=false, docAssigned=false;
-  ids.forEach((id,i)=>{
-    if (i<mc) roles[id]='mafia';
-    else if (useD&&!detAssigned){roles[id]='detective';detAssigned=true;}
-    else if (useDoc&&!docAssigned){roles[id]='doctor';docAssigned=true;}
-    else roles[id]='villager';
-  });
-  const up={};
-  Object.entries(roles).forEach(([id,r])=>{ up[`players/${id}/role`]=r; up[`players/${id}/acked`]=false; });
-  up['gs/phase']='role_reveal'; up['gs/round']=1;
-  await rRef.update(up);
+async function doStart(){
+  if(!amHost||startLock)return;
+  const phase=(await rRef.child('gs/phase').once('value')).val();
+  if(phase!=='lobby')return;
+  startLock=true;
+  g('l-start').disabled=true;
+  try{
+    const ps=(await rRef.child('players').once('value')).val()||{};
+    const ids=Object.keys(ps).sort(()=>Math.random()-.5);
+    const mc=cfg.mafiaCount, useD=cfg.detective, useDoc=cfg.doctor;
+    const mafiaIds=ids.slice(0,mc);
+    const restIds=ids.slice(mc);
+    const roles={};
+    mafiaIds.forEach(id=>roles[id]='mafia');
+    let detDone=false, docDone=false;
+    restIds.forEach(id=>{
+      if(useD&&!detDone){roles[id]='detective';detDone=true;}
+      else if(useDoc&&!docDone){roles[id]='doctor';docDone=true;}
+      else roles[id]='villager';
+    });
+    const up={};
+    Object.entries(roles).forEach(([id,r])=>{up[`players/${id}/role`]=r;up[`players/${id}/acked`]=false;});
+    up['gs/phase']='role_reveal'; up['gs/round']=1;
+    await rRef.update(up);
+  }catch(e){
+    startLock=false;
+    g('l-start').disabled=false;
+    g('le-err').textContent='Start failed: '+e.message;
+  }
 }
 
 // ══════════════════════════════════════
 //  ROLE REVEAL
 // ══════════════════════════════════════
-async function enterRoleReveal() {
-  const me = (await rRef.child('players/'+myId).once('value')).val();
-  myRole = me.role;
-  cfg = (await rRef.child('cfg').once('value')).val()||cfg;
+async function enterRoleReveal(){
+  const me=(await rRef.child('players/'+myId).once('value')).val();
+  myRole=me.role;
+  cfg=(await rRef.child('cfg').once('value')).val()||cfg;
   show('role');
-  const RDEFS = {
-    mafia:{ico:'🔪',cls:'mafia',name:'MAFIA',desc:'Each night, vote secretly with your team to eliminate a villager. Blend into the village by day. You win when Mafia numbers equal the remaining villagers.'},
-    detective:{ico:'🔍',cls:'detective',name:'DETECTIVE',desc:'Each night, investigate one player to learn their true role. Share your knowledge wisely — but stay hidden, or the Mafia will target you.'},
-    doctor:{ico:'💉',cls:'doctor',name:'DOCTOR',desc:'Each night, choose one player to shield from elimination. If the Mafia targets them, they survive. You may protect yourself.'},
-    villager:{ico:'🏘️',cls:'villager',name:'VILLAGER',desc:'Each day, discuss and vote to eliminate who you believe is Mafia. Watch for inconsistencies. Trust carefully. Eliminate all Mafia to win.'}
+  const RDEFS={
+    mafia:{ico:'🔪',cls:'mafia',name:'MAFIA',desc:'Each night, vote secretly with your team to eliminate a villager. Blend in by day. Win when Mafia numbers equal the remaining villagers.'},
+    detective:{ico:'🔍',cls:'detective',name:'DETECTIVE',desc:'Each night, investigate one player to learn their role. Share wisely — stay hidden or Mafia will target you.'},
+    doctor:{ico:'💉',cls:'doctor',name:'DOCTOR',desc:'Each night, choose one player to protect from elimination. You may protect yourself.'},
+    villager:{ico:'🏘️',cls:'villager',name:'VILLAGER',desc:'Each day, discuss and vote to eliminate who you believe is Mafia. Eliminate all Mafia to win.'}
   };
   const r=RDEFS[myRole]||RDEFS.villager;
   g('role-card').innerHTML=`<div class="rc ${r.cls}"><span class="rc-ico">${r.ico}</span><div class="rc-name ${r.cls}">${r.name}</div><div class="rc-desc">${r.desc}</div></div>`;
-  if (myRole==='mafia') {
+  if(myRole==='mafia'){
     const all=(await rRef.child('players').once('value')).val()||{};
     const mates=Object.entries(all).filter(([id,p])=>p.role==='mafia'&&id!==myId);
-    if (mates.length){ g('m-mates').style.display=''; g('m-mates-list').innerHTML=mates.map(([,p])=>`<div class="prow"><div class="pav">🔪</div><div class="pname">${esc(p.name)}</div><span class="tag t-mafia">MAFIA</span></div>`).join(''); }
+    if(mates.length){g('m-mates').style.display='';g('m-mates-list').innerHTML=mates.map(([,p])=>`<div class="prow"><div class="pav">🔪</div><div class="pname">${esc(p.name)}</div><span class="tag t-mafia">MAFIA</span></div>`).join('');}
   }
-  g('ack-btn').disabled=false; g('ack-btn').textContent='I UNDERSTAND MY ROLE';
+  // Start 20-second reading timer
+  startAckTimer();
 }
 
-async function doAck() {
-  g('ack-btn').disabled=true; g('ack-btn').textContent='WAITING FOR OTHERS...';
+function startAckTimer(){
+  clearAckTimer();
+  myAcked=false;
+  let rem=ACK_SECS;
+  const btn=g('ack-btn'), fill=g('ack-fill'), lbl=g('ack-timer-lbl');
+  // Button is enabled immediately — click anytime OR auto-fires at 20s
+  btn.disabled=false;
+  btn.textContent='I UNDERSTAND MY ROLE';
+  fill.style.width='100%';
+  lbl.textContent=`Auto-ready in ${rem}s`;
+  ackTimerInterval=setInterval(()=>{
+    rem--;
+    const pct=Math.max(0,(rem/ACK_SECS)*100);
+    fill.style.width=pct+'%';
+    if(rem<=5){fill.classList.add('urgent');lbl.classList.add('urgent');}
+    lbl.textContent=rem>0?`Auto-ready in ${rem}s`:'Starting...';
+    if(rem<=0){
+      clearAckTimer();
+      doAck(); // Auto-acknowledge anyone who hasn't clicked yet
+    }
+  },1000);
+}
+
+async function doAck(){
+  if(myAcked)return; // Prevent double-fire from both button click and timer
+  myAcked=true;
+  clearAckTimer();
+  const btn=g('ack-btn');
+  if(btn){btn.disabled=true;btn.textContent='WAITING FOR OTHERS...';}
   await rRef.child('players/'+myId+'/acked').set(true);
-  if (amHost) {
-    on('acked', rRef.child('players'), 'value', async snap=>{
-      if (Object.values(snap.val()||{}).every(p=>p.acked)){ off('acked'); await rRef.child('gs/phase').set('night'); }
+  if(amHost){
+    on('acked',rRef.child('players'),'value',async snap=>{
+      if(Object.values(snap.val()||{}).every(p=>p.acked)){off('acked');await rRef.child('gs/phase').set('night');}
     });
   }
-  on('toN', rRef.child('gs/phase'), 'value', snap=>{ if(snap.val()==='night'){off('toN');enterNight();} });
+  on('toN',rRef.child('gs/phase'),'value',snap=>{if(snap.val()==='night'){off('toN');enterNight();}});
 }
 
 // ══════════════════════════════════════
 //  NIGHT
 // ══════════════════════════════════════
-async function enterNight() {
+async function enterNight(){
+  clearTimer();
   const gs=(await rRef.child('gs').once('value')).val();
   cfg=(await rRef.child('cfg').once('value')).val()||cfg;
-  round=gs.round||1; selK=selD=selS=null;
+  round=gs.round||1; selK=selD=selS=null; nightActionDone=false;
   show('night');
   g('n-round').textContent='Round '+round;
   g('n-force').style.display=amHost?'':'none';
   const ps=(await rRef.child('players').once('value')).val()||{};
   const alive=Object.entries(ps).filter(([,p])=>p.alive);
-  renderNight(alive, ps);
-  on('nph', rRef.child('gs/phase'), 'value', snap=>{ if(snap.val()==='day'){off('nph');enterDay();} if(snap.val()==='game_over'){off('nph');loadOver();} });
-  if (amHost) watchNightDone(alive);
-  if (myRole==='mafia'){ watchMVotes(); watchMChat(); }
+  renderNight(alive,ps);
+  on('nph',rRef.child('gs/phase'),'value',snap=>{
+    if(snap.val()==='day'){off('nph');off('ndl');clearTimer();enterDay();}
+    if(snap.val()==='game_over'){off('nph');off('ndl');clearTimer();loadOver();}
+  });
+  if(amHost){
+    watchNightDone(alive);
+    // Host sets the authoritative deadline so all clients share the same clock
+    const deadline=Date.now()+NIGHT_SECS*1000;
+    await rRef.child('gs/nightDeadline').set(deadline);
+  }
+  on('ndl',rRef.child('gs/nightDeadline'),'value',snap=>{
+    const dl=snap.val();
+    if(dl) startNightTimer(dl,alive,ps);
+  });
+  if(myRole==='mafia'){watchMVotes();watchMChat();}
 }
 
-function renderNight(alive, ps) {
-  const nc=g('n-content'), me=ps[myId];
-  if (!me||!me.alive) {
+function startNightTimer(deadline,alive,ps){
+  clearTimer();
+  const el=g('n-timer');
+  const me=ps[myId];
+  // Only show to players who have an active action (not dead/villager — they already auto-submitted)
+  const needsAction=me&&me.alive&&(myRole==='mafia'||(myRole==='detective'&&cfg.detective)||(myRole==='doctor'&&cfg.doctor));
+  if(!needsAction)return;
+  if(el)el.style.display='';
+  timerInterval=setInterval(async()=>{
+    const rem=Math.ceil((deadline-Date.now())/1000);
+    if(el){
+      if(rem<=0){el.textContent='⏱ Time\'s up!';el.style.color='var(--red2)';}
+      else{el.textContent=`⏱ ${rem}s to make your move`;el.style.color=rem<=10?'var(--red2)':rem<=20?'var(--gold)':'var(--txt2)';}
+    }
+    if(rem<=0){
+      clearTimer();
+      if(nightActionDone)return; // already submitted
+      if(myRole==='mafia'){
+        // Only submit if they actually picked someone — no selection = no kill vote
+        if(selK)await subK(); else await markNDone();
+      }else if(myRole==='detective'&&cfg.detective){
+        if(!selD){const targets=alive.filter(([id])=>id!==myId);if(targets.length)selD=targets[Math.floor(Math.random()*targets.length)][0];}
+        if(selD)await subD(); else await markNDone();
+      }else if(myRole==='doctor'&&cfg.doctor){
+        if(!selS)selS=myId; // default: protect yourself
+        await subS();
+      }
+    }
+  },1000);
+}
+
+function renderNight(alive,ps){
+  const nc=g('n-content'),me=ps[myId];
+  if(!me||!me.alive){
     nc.innerHTML=`<div class="ann"><span class="ann-ico">☠️</span><div class="ann-big">You are dead.</div><div class="ann-sm">Watch quietly as the night unfolds...</div></div>`;
-    markNDone(); return;
+    markNDone();return;
   }
-  if (myRole==='mafia') {
+  if(myRole==='mafia'){
     nc.innerHTML=`<div class="ib red">🔪 Vote with your team to choose tonight's victim.</div><div class="lbl">Choose Target</div>${alive.filter(([id])=>id!==myId).map(([id,p])=>`<div class="arow" id="nr-${id}" onclick="pickK('${id}')"><div class="pav">👤</div><div>${esc(p.name)}</div><span class="arow-votes" id="nv-${id}"></span></div>`).join('')}<button class="btn btn-red g" id="nk-btn" onclick="subK()" disabled>CONFIRM TARGET</button><div class="card" style="margin-top:4px"><div class="lbl">🔪 Mafia Chat</div><div class="chat-box" id="mc-box"></div><div class="chat-row"><input class="inp" id="mc-in" type="text" placeholder="Talk to your team..." maxlength="200" onkeydown="if(event.key==='Enter')sendM()"><button class="csend" onclick="sendM()">➤</button></div></div>`;
-  } else if (myRole==='detective'&&cfg.detective) {
+  }else if(myRole==='detective'&&cfg.detective){
     nc.innerHTML=`<div class="ib blue">🔍 Investigate one player to reveal their role.</div><div class="lbl">Investigate</div>${alive.filter(([id])=>id!==myId).map(([id,p])=>`<div class="arow" id="nr-${id}" onclick="pickD('${id}')"><div class="pav">👤</div><div>${esc(p.name)}</div></div>`).join('')}<button class="btn btn-blue g" id="nd-btn" onclick="subD()" disabled>INVESTIGATE</button>`;
-  } else if (myRole==='doctor'&&cfg.doctor) {
+  }else if(myRole==='doctor'&&cfg.doctor){
     nc.innerHTML=`<div class="ib grn">💉 Choose one player to protect tonight.</div><div class="lbl">Protect</div>${alive.map(([id,p])=>`<div class="arow" id="nr-${id}" onclick="pickS('${id}')"><div class="pav">👤</div><div>${esc(p.name)}${id===myId?' <span class="tag t-you">YOU</span>':''}</div></div>`).join('')}<button class="btn btn-grn g" id="ns-btn" onclick="subS()" disabled>PROTECT PLAYER</button>`;
-  } else {
+  }else{
     nc.innerHTML=`<div style="text-align:center;padding:48px 0"><div style="font-size:3.5rem;margin-bottom:14px">😴</div><div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--txt2)">The village sleeps...</div><div class="pulse" style="margin-top:12px;font-size:.85rem">Something stirs in the dark</div></div>`;
     markNDone();
   }
 }
 
-function pickK(id){ selK=id; document.querySelectorAll('.arow').forEach(e=>e.classList.remove('sk')); const el=g('nr-'+id); if(el)el.classList.add('sk'); const b=g('nk-btn'); if(b)b.disabled=false; }
-async function subK(){ if(!selK)return; const b=g('nk-btn'); if(b){b.disabled=true;b.textContent='VOTE CAST ✓';} await rRef.child('mafiaVotes/'+myId).set(selK); markNDone(); }
-function watchMVotes(){ on('mv', rRef.child('mafiaVotes'), 'value', snap=>{ const v=snap.val()||{}; const c={}; Object.values(v).forEach(t=>c[t]=(c[t]||0)+1); Object.entries(c).forEach(([id,n])=>{ const el=g('nv-'+id); if(el)el.textContent=n+' vote'+(n>1?'s':''); }); }); }
-function watchMChat(){ on('mc', rRef.child('mafiaChat'), 'value', snap=>{ const box=g('mc-box'); if(!box)return; const msgs=snap.val()||{}; box.innerHTML=''; Object.values(msgs).sort((a,b)=>a.ts-b.ts).forEach(m=>appendMsg(box,m.n,m.t,m.p===myId)); box.scrollTop=box.scrollHeight; }); }
-async function sendM(){ const inp=g('mc-in'); const t=inp.value.trim(); if(!t)return; inp.value=''; const me=(await rRef.child('players/'+myId).once('value')).val(); rRef.child('mafiaChat').push({n:me.name,t,p:myId,ts:Date.now()}); }
+function pickK(id){selK=id;document.querySelectorAll('.arow').forEach(e=>e.classList.remove('sk'));const el=g('nr-'+id);if(el)el.classList.add('sk');const b=g('nk-btn');if(b)b.disabled=false;}
+async function subK(){if(!selK||nightActionDone)return;nightActionDone=true;const b=g('nk-btn');if(b){b.disabled=true;b.textContent='VOTE CAST ✓';}await rRef.child('mafiaVotes/'+myId).set(selK);markNDone();}
+function watchMVotes(){on('mv',rRef.child('mafiaVotes'),'value',snap=>{const v=snap.val()||{};const c={};Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);Object.entries(c).forEach(([id,n])=>{const el=g('nv-'+id);if(el)el.textContent=n+' vote'+(n>1?'s':'');});});}
+function watchMChat(){on('mc',rRef.child('mafiaChat'),'value',snap=>{const box=g('mc-box');if(!box)return;const msgs=snap.val()||{};box.innerHTML='';Object.values(msgs).sort((a,b)=>a.ts-b.ts).forEach(m=>appendMsg(box,m.n,m.t,m.p===myId));box.scrollTop=box.scrollHeight;});}
+async function sendM(){const inp=g('mc-in');const t=inp.value.trim();if(!t)return;inp.value='';const me=(await rRef.child('players/'+myId).once('value')).val();rRef.child('mafiaChat').push({n:me.name,t,p:myId,ts:Date.now()});}
 
-function pickD(id){ selD=id; document.querySelectorAll('.arow').forEach(e=>e.classList.remove('sd')); const el=g('nr-'+id); if(el)el.classList.add('sd'); const b=g('nd-btn'); if(b)b.disabled=false; }
-async function subD(){ if(!selD)return; const b=g('nd-btn'); if(b){b.disabled=true;b.textContent='INVESTIGATING ✓';} await rRef.child('detectTarget').set(myId+':'+selD); markNDone(); }
+function pickD(id){selD=id;document.querySelectorAll('.arow').forEach(e=>e.classList.remove('sd'));const el=g('nr-'+id);if(el)el.classList.add('sd');const b=g('nd-btn');if(b)b.disabled=false;}
+async function subD(){if(!selD||nightActionDone)return;nightActionDone=true;const b=g('nd-btn');if(b){b.disabled=true;b.textContent='INVESTIGATING ✓';}await rRef.child('detectTarget').set(myId+':'+selD);markNDone();}
 
-function pickS(id){ selS=id; document.querySelectorAll('.arow').forEach(e=>e.classList.remove('ss')); const el=g('nr-'+id); if(el)el.classList.add('ss'); const b=g('ns-btn'); if(b)b.disabled=false; }
-async function subS(){ if(!selS)return; const b=g('ns-btn'); if(b){b.disabled=true;b.textContent='PROTECTED ✓';} await rRef.child('doctorTarget').set(selS); markNDone(); }
+function pickS(id){selS=id;document.querySelectorAll('.arow').forEach(e=>e.classList.remove('ss'));const el=g('nr-'+id);if(el)el.classList.add('ss');const b=g('ns-btn');if(b)b.disabled=false;}
+async function subS(){if(!selS||nightActionDone)return;nightActionDone=true;const b=g('ns-btn');if(b){b.disabled=true;b.textContent='PROTECTED ✓';}await rRef.child('doctorTarget').set(selS);markNDone();}
 
-async function markNDone(){ await rRef.child('nightDone/'+myId).set(true); }
+async function markNDone(){await rRef.child('nightDone/'+myId).set(true);}
 
-function watchNightDone(alive) {
+function watchNightDone(alive){
+  // Only count entries from alive players — dead players also call markNDone()
+  // but their IDs must NOT count toward the threshold or night resolves instantly
+  const aliveIds=new Set(alive.map(([id])=>id));
   const tot=alive.length;
-  on('nd', rRef.child('nightDone'), 'value', async snap=>{
-    if (Object.keys(snap.val()||{}).length>=tot){ off('nd'); await resolveNight(alive); }
+  on('nd',rRef.child('nightDone'),'value',async snap=>{
+    const done=snap.val()||{};
+    const aliveCount=Object.keys(done).filter(id=>aliveIds.has(id)).length;
+    if(aliveCount>=tot){off('nd');await resolveNight(alive);}
   });
 }
-async function forceNight(){ if(!amHost)return; off('nd'); const ps=(await rRef.child('players').once('value')).val()||{}; await resolveNight(Object.entries(ps).filter(([,p])=>p.alive)); }
+async function forceNight(){if(!amHost)return;off('nd');const ps=(await rRef.child('players').once('value')).val()||{};await resolveNight(Object.entries(ps).filter(([,p])=>p.alive));}
 
-async function resolveNight(alive) {
-  const [mv,dt,dr]=await Promise.all([rRef.child('mafiaVotes').once('value'),rRef.child('detectTarget').once('value'),rRef.child('doctorTarget').once('value')]);
-  const votes=mv.val()||{}, detectTgt=dt.val(), doctorTgt=dr.val();
-  const c={}; Object.values(votes).forEach(t=>c[t]=(c[t]||0)+1);
+async function resolveNight(alive){
+  const[mv,dt,dr]=await Promise.all([rRef.child('mafiaVotes').once('value'),rRef.child('detectTarget').once('value'),rRef.child('doctorTarget').once('value')]);
+  const votes=mv.val()||{},detectTgt=dt.val(),doctorTgt=dr.val();
+  const c={};Object.values(votes).forEach(t=>c[t]=(c[t]||0)+1);
   let kill=null;
-  if (Object.keys(c).length>0){ const max=Math.max(...Object.values(c)); const tied=Object.entries(c).filter(([,n])=>n===max).map(([id])=>id); kill=tied[Math.floor(Math.random()*tied.length)]; }
+  if(Object.keys(c).length>0){
+    const max=Math.max(...Object.values(c));
+    const tied=Object.entries(c).filter(([,n])=>n===max).map(([id])=>id);
+    // Only kill if there is a single clear winner — a tie means no kill
+    if(tied.length===1) kill=tied[0];
+  }
   const saved=kill&&kill===doctorTgt;
   const killed=saved?null:kill;
   let killedName=null;
-  if (killed){ const ks=(await rRef.child('players/'+killed).once('value')).val(); killedName=ks?.name||'?'; }
+  if(killed){const ks=(await rRef.child('players/'+killed).once('value')).val();killedName=ks?.name||'?';}
   let detectInfo=null;
-  if (detectTgt){ const parts=detectTgt.split(':'); const dId=parts[0],tId=parts[1]; const ts=(await rRef.child('players/'+tId).once('value')).val(); if(ts)detectInfo={dId,tId,tName:ts.name,tRole:ts.role}; }
-  const up={'gs/nightResult':{killed,killedName,saved,detectInfo},'mafiaVotes':{},'detectTarget':null,'doctorTarget':null,'nightDone':{},'dayVotes':{}};
-  if (killed) up['players/'+killed+'/alive']=false;
+  if(detectTgt){const parts=detectTgt.split(':');const dId=parts[0],tId=parts[1];const ts=(await rRef.child('players/'+tId).once('value')).val();if(ts)detectInfo={dId,tId,tName:ts.name,tRole:ts.role};}
+  const up={'gs/nightResult':{killed,killedName,saved,detectInfo},'mafiaVotes':{},'detectTarget':null,'doctorTarget':null,'nightDone':{},'dayVotes':{},'gs/voteDeadline':null,'gs/nightDeadline':null};
+  if(killed)up['players/'+killed+'/alive']=false;
   await rRef.update(up);
   const all=(await rRef.child('players').once('value')).val()||{};
   const alv=Object.values(all).filter(p=>p.alive);
-  const maf=alv.filter(p=>p.role==='mafia').length, vil=alv.filter(p=>p.role!=='mafia').length;
-  if (maf===0) await rRef.child('gs').update({phase:'game_over',winner:'villagers'});
-  else if (maf>=vil) await rRef.child('gs').update({phase:'game_over',winner:'mafia'});
+  const maf=alv.filter(p=>p.role==='mafia').length,vil=alv.filter(p=>p.role!=='mafia').length;
+  if(maf===0)await rRef.child('gs').update({phase:'game_over',winner:'villagers'});
+  else if(maf>=vil)await rRef.child('gs').update({phase:'game_over',winner:'mafia'});
   else await rRef.child('gs').update({phase:'day'});
 }
 
 // ══════════════════════════════════════
 //  DAY
 // ══════════════════════════════════════
-async function enterDay() {
+async function enterDay(){
+  clearTimer();
   const gs=(await rRef.child('gs').once('value')).val();
-  round=gs.round||1; selV=null; myVoteDone=false;
+  cfg=(await rRef.child('cfg').once('value')).val()||cfg;
+  round=gs.round||1;selV=null;myVoteDone=false;
   show('day');
   g('d-round').textContent='Round '+round;
   const nr=gs.nightResult||{};
   const ann=g('d-ann');
-  if (nr.killed) ann.innerHTML=`<span class="ann-ico">💀</span><div class="ann-big">${esc(nr.killedName)} was found dead at dawn.</div><div class="ann-sm">Who could be responsible? Find the killer before nightfall.</div>`;
-  else if (nr.saved) ann.innerHTML=`<span class="ann-ico">🌅</span><div class="ann-big">The village woke unharmed!</div><div class="ann-sm">The doctor kept someone safe last night.</div>`;
-  else ann.innerHTML=`<span class="ann-ico">🌅</span><div class="ann-big">A quiet night — no one died.</div><div class="ann-sm">The Mafia found no victim. Discuss and find them.</div>`;
-  if (myRole==='detective'&&nr.detectInfo&&nr.detectInfo.dId===myId){ const di=nr.detectInfo; g('d-det').style.display=''; g('d-det').innerHTML=`🔍 <strong>Your Investigation:</strong> ${esc(di.tName)} is <span class="tag t-${di.tRole}">${di.tRole.toUpperCase()}</span>`; }
+  if(nr.killed)ann.innerHTML=`<span class="ann-ico">💀</span><div class="ann-big">${esc(nr.killedName)} was found dead at dawn.</div><div class="ann-sm">Who could be responsible? Find the killer before nightfall.</div>`;
+  else if(nr.saved)ann.innerHTML=`<span class="ann-ico">🌅</span><div class="ann-big">The village woke unharmed!</div><div class="ann-sm">The doctor kept someone safe last night.</div>`;
+  else ann.innerHTML=`<span class="ann-ico">🌅</span><div class="ann-big">A quiet night — no one died.</div><div class="ann-sm">Discuss and find the Mafia.</div>`;
+  if(myRole==='detective'&&nr.detectInfo&&nr.detectInfo.dId===myId){const di=nr.detectInfo;g('d-det').style.display='';g('d-det').innerHTML=`🔍 <strong>Your Investigation:</strong> ${esc(di.tName)} is <span class="tag t-${di.tRole}">${di.tRole.toUpperCase()}</span>`;}
   const ps=(await rRef.child('players').once('value')).val()||{};
-  const me=ps[myId]; const amAlive=me&&me.alive;
-  if (!amAlive){ g('d-chat-row').style.display='none'; g('d-vote-card').innerHTML=`<div class="ib" style="text-align:center">☠️ You are dead. Watch silently.</div>`; }
+  const me=ps[myId];const amAlive=me&&me.alive;
+  if(!amAlive){g('d-chat-row').style.display='none';g('d-vote-card').innerHTML=`<div class="ib" style="text-align:center">☠️ You are dead. Watch silently.</div>`;}
+  else { g('d-timer').style.display=''; }
   renderVotes(ps);
   setupDayChat();
-  // All players watch vote counts for live UI updates
   watchDayVotesUI(ps);
-  // Only host resolves the result
-  if (amHost) watchDayVotes(ps);
-  on('dph', rRef.child('gs'), 'value', snap=>{ const gs2=snap.val()||{}; if(gs2.phase==='game_over'){off('dvui');off('dph');loadOver();} else if(gs2.phase==='night'){off('dvui');off('dph');round=gs2.round||round;enterNight();} });
+  if(amHost){
+    const deadline=Date.now()+(cfg.voteTimer||60)*1000;
+    await rRef.child('gs/voteDeadline').set(deadline);
+    watchDayVotes(ps);
+  }
+  on('vdl',rRef.child('gs/voteDeadline'),'value',snap=>{
+    const dl=snap.val();if(dl)startVoteTimer(dl,ps);
+  });
+  on('dph',rRef.child('gs'),'value',snap=>{
+    const gs2=snap.val()||{};
+    if(gs2.phase==='game_over'){offDay();loadOver();}
+    else if(gs2.phase==='night'){offDay();round=gs2.round||round;enterNight();}
+  });
 }
 
-function renderVotes(ps) {
+function offDay(){off('dvui');off('dph');off('vdl');off('dv');clearTimer();}
+
+function watchDayVotesUI(ps){
+  const alive=Object.entries(ps).filter(([,p])=>p.alive),tot=alive.length;
+  on('dvui',rRef.child('dayVotes'),'value',snap=>{
+    const v=snap.val()||{},c={};
+    Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);
+    alive.forEach(([id])=>{const n=c[id]||0;const vc=g('vc-'+id),vb=g('vb-'+id);if(vc)vc.textContent=n+' vote'+(n!==1?'s':'');if(vb)vb.style.width=(tot>0?n/tot*100:0)+'%';});
+    // Update skip count
+    const sn=c['__skip__']||0;const svc=g('vc-__skip__'),svb=g('vb-__skip__');
+    if(svc)svc.textContent=sn+' vote'+(sn!==1?'s':'');if(svb)svb.style.width=(tot>0?sn/tot*100:0)+'%';
+  });
+}
+
+function watchDayVotes(ps){
+  const alive=Object.entries(ps).filter(([,p])=>p.alive),voterCount=alive.length,maj=Math.floor(voterCount/2)+1;
+  on('dv',rRef.child('dayVotes'),'value',async snap=>{
+    const v=snap.val()||{},c={};
+    Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);
+    const tv=Object.keys(v).length;
+    // Check for majority (any target including skip)
+    for(const[id,n]of Object.entries(c)){
+      if(n>=maj){off('dv');await resolveDay(id==='__skip__'?null:id,ps,false);return;}
+    }
+    // All votes in — check tie vs winner
+    if(tv>=voterCount){
+      off('dv');
+      const playerVotes=Object.entries(c).filter(([id])=>id!=='__skip__');
+      const skipN=c['__skip__']||0;
+      if(playerVotes.length===0){await resolveDay(null,ps,false);return;}// all skipped
+      const mx=Math.max(...playerVotes.map(([,n])=>n));
+      if(skipN>mx){await resolveDay(null,ps,false);return;}// skip wins
+      const tied=playerVotes.filter(([,n])=>n===mx);
+      // Tie (2+ players share top) OR skip ties with top → no elimination
+      if(tied.length>1||skipN===mx){await resolveDay(null,ps,true);}
+      else{await resolveDay(tied[0][0],ps,false);}
+    }
+  });
+}
+
+function startVoteTimer(deadline,ps){
+  clearTimer();
+  const el=g('d-timer');
+  timerInterval=setInterval(async()=>{
+    const rem=Math.ceil((deadline-Date.now())/1000);
+    if(el){
+      if(rem<=0){el.textContent='⏱ Time\'s up!';el.style.color='var(--red2)';}
+      else{el.textContent=`⏱ ${rem}s remaining to vote`;el.style.color=rem<=10?'var(--red2)':rem<=20?'var(--gold)':'var(--txt2)';}
+    }
+    if(rem<=0){
+      clearTimer();
+      if(amHost){
+        off('dv');
+        const snap=await rRef.child('dayVotes').once('value');
+        const v=snap.val()||{},c={};
+        Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);
+        const playerVotes=Object.entries(c).filter(([id])=>id!=='__skip__');
+        const skipN=c['__skip__']||0;
+        // No votes, all skipped, or tie → no elimination
+        if(Object.keys(c).length===0||playerVotes.length===0){await resolveDay(null,ps,false);return;}
+        const mx=Math.max(...playerVotes.map(([,n])=>n));
+        if(skipN>mx){await resolveDay(null,ps,false);return;}
+        const tied=playerVotes.filter(([,n])=>n===mx);
+        if(tied.length>1||skipN===mx){await resolveDay(null,ps,true);}
+        else{await resolveDay(tied[0][0],ps,false);}
+      }
+    }
+  },1000);
+}
+
+function renderVotes(ps){
   const alive=Object.entries(ps).filter(([,p])=>p.alive);
-  const vc=g('d-votes'); if(!vc)return;
-  vc.innerHTML=alive.map(([id,p])=>`<div class="vrow${id===myId?' nv':''}" id="vr-${id}" onclick="pickV('${id}')"><div class="pav">👤</div><div class="pname">${esc(p.name)}${id===myId?' <span class="tag t-you">YOU</span>':''}</div><div class="vinfo"><div class="vcnt" id="vc-${id}">0 votes</div><div class="vbar"><div class="vfill" id="vb-${id}" style="width:0%"></div></div></div></div>`).join('');
+  const vc=g('d-votes');if(!vc)return;
+  const skipRow=`<div class="vrow vrow-skip" id="vr-__skip__" onclick="pickV('__skip__')"><div class="pav" style="font-size:1.1rem">🚫</div><div class="pname" style="color:var(--txt2)">Skip — No Elimination</div><div class="vinfo"><div class="vcnt" id="vc-__skip__">0 votes</div><div class="vbar"><div class="vfill" id="vb-__skip__" style="width:0%;background:var(--txt3)"></div></div></div></div>`;
+  vc.innerHTML=skipRow+alive.map(([id,p])=>`<div class="vrow${id===myId?' nv':''}" id="vr-${id}" onclick="pickV('${id}')"><div class="pav">👤</div><div class="pname">${esc(p.name)}${id===myId?' <span class="tag t-you">YOU</span>':''}</div><div class="vinfo"><div class="vcnt" id="vc-${id}">0 votes</div><div class="vbar"><div class="vfill" id="vb-${id}" style="width:0%"></div></div></div></div>`).join('');
 }
 
-function pickV(id){ if(myVoteDone)return; selV=id; document.querySelectorAll('.vrow').forEach(e=>e.classList.remove('sv')); const el=g('vr-'+id); if(el)el.classList.add('sv'); const b=g('d-vbtn'); if(b)b.disabled=false; }
-async function castVote(){ if(!selV||myVoteDone)return; myVoteDone=true; const b=g('d-vbtn'); if(b){b.disabled=true;b.textContent='VOTE CAST ✓';} await rRef.child('dayVotes/'+myId).set(selV); }
+function pickV(id){if(myVoteDone)return;selV=id;document.querySelectorAll('.vrow').forEach(e=>e.classList.remove('sv'));const el=g('vr-'+id);if(el)el.classList.add('sv');const b=g('d-vbtn');if(b)b.disabled=false;}
+async function castVote(){if(!selV||myVoteDone)return;myVoteDone=true;const b=g('d-vbtn');if(b){b.disabled=true;b.textContent='VOTE CAST ✓';}await rRef.child('dayVotes/'+myId).set(selV);}
 
-// UI-only vote watcher — runs for all players so everyone sees counts live
-function watchDayVotesUI(ps) {
-  const alive=Object.entries(ps).filter(([,p])=>p.alive), tot=alive.length;
-  on('dvui', rRef.child('dayVotes'), 'value', snap=>{
-    const v=snap.val()||{}, c={};
-    Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);
-    alive.forEach(([id])=>{ const n=c[id]||0; const vc=g('vc-'+id),vb=g('vb-'+id); if(vc)vc.textContent=n+' vote'+(n!==1?'s':''); if(vb)vb.style.width=(tot>0?n/tot*100:0)+'%'; });
-  });
-}
-
-function watchDayVotes(ps) {
-  const alive=Object.entries(ps).filter(([,p])=>p.alive), tot=alive.length, maj=Math.floor(tot/2)+1;
-  on('dv', rRef.child('dayVotes'), 'value', async snap=>{
-    const v=snap.val()||{}, c={};
-    Object.values(v).forEach(t=>c[t]=(c[t]||0)+1);
-    alive.forEach(([id])=>{ const n=c[id]||0; const vc=g('vc-'+id),vb=g('vb-'+id); if(vc)vc.textContent=n+' vote'+(n!==1?'s':''); if(vb)vb.style.width=(tot>0?n/tot*100:0)+'%'; });
-    const tv=Object.keys(v).length; let res=false;
-    for (const [id,n] of Object.entries(c)){ if(n>=maj){ off('dv'); res=true; await resolveDay(id,ps,false); break; } }
-    if (!res&&tv>=tot){ off('dv'); const mx=Math.max(...Object.values(c)); const tied=Object.entries(c).filter(([,n])=>n===mx).map(([id])=>id); await resolveDay(tied[Math.floor(Math.random()*tied.length)],ps,true); }
-  });
-}
-
-async function resolveDay(elimId, ps, tie) {
-  const en=ps[elimId]?.name||'?', er=ps[elimId]?.role||'villager';
-  const up={[`players/${elimId}/alive`]:false,'gs/dayResult':{elimId,elimName:en,elimRole:er,tie}};
+async function resolveDay(elimId,ps,tie){
+  const skipped=!elimId;
+  const up={'gs/voteDeadline':null};
+  if(!skipped){
+    const en=ps[elimId]?.name||'?',er=ps[elimId]?.role||'villager';
+    up[`players/${elimId}/alive`]=false;
+    up['gs/dayResult']={elimId,elimName:en,elimRole:er,tie,skipped:false};
+  }else{
+    up['gs/dayResult']={elimId:null,elimName:null,tie,skipped:true};
+  }
   await rRef.update(up);
   const all=(await rRef.child('players').once('value')).val()||{};
-  const alv=Object.values(all).filter(p=>p.alive), maf=alv.filter(p=>p.role==='mafia').length, vil=alv.filter(p=>p.role!=='mafia').length;
-  if (maf===0) await rRef.child('gs').update({phase:'game_over',winner:'villagers'});
-  else if (maf>=vil) await rRef.child('gs').update({phase:'game_over',winner:'mafia'});
+  const alv=Object.values(all).filter(p=>p.alive),maf=alv.filter(p=>p.role==='mafia').length,vil=alv.filter(p=>p.role!=='mafia').length;
+  if(maf===0)await rRef.child('gs').update({phase:'game_over',winner:'villagers'});
+  else if(maf>=vil)await rRef.child('gs').update({phase:'game_over',winner:'mafia'});
   else await rRef.child('gs').update({phase:'night',round:round+1});
 }
 
 function setupDayChat(){
-  on('dc', rRef.child('dayChat'), 'value', snap=>{ const box=g('d-chat'); if(!box)return; const msgs=snap.val()||{}; box.innerHTML=''; Object.values(msgs).sort((a,b)=>a.ts-b.ts).forEach(m=>appendMsg(box,m.n,m.t,m.p===myId)); box.scrollTop=box.scrollHeight; });
+  on('dc',rRef.child('dayChat'),'value',snap=>{const box=g('d-chat');if(!box)return;const msgs=snap.val()||{};box.innerHTML='';Object.values(msgs).sort((a,b)=>a.ts-b.ts).forEach(m=>appendMsg(box,m.n,m.t,m.p===myId));box.scrollTop=box.scrollHeight;});
 }
-async function sendDay(){ const me=(await rRef.child('players/'+myId).once('value')).val(); if(!me||!me.alive)return; const inp=g('d-in'); const t=inp.value.trim(); if(!t)return; inp.value=''; rRef.child('dayChat').push({n:me.name,t,p:myId,ts:Date.now()}); }
+async function sendDay(){const me=(await rRef.child('players/'+myId).once('value')).val();if(!me||!me.alive)return;const inp=g('d-in');const t=inp.value.trim();if(!t)return;inp.value='';rRef.child('dayChat').push({n:me.name,t,p:myId,ts:Date.now()});}
 
 // ══════════════════════════════════════
 //  GAME OVER
 // ══════════════════════════════════════
-async function loadOver(){ const gs=(await rRef.child('gs').once('value')).val(); const ps=(await rRef.child('players').once('value')).val()||{}; showOver(gs.winner,ps); }
+async function loadOver(){const gs=(await rRef.child('gs').once('value')).val();const ps=(await rRef.child('players').once('value')).val()||{};showOver(gs.winner,ps);}
 function showOver(winner,ps){
-  show('over');
+  clearTimer();show('over');
   const isMafia=winner==='mafia';
   g('ov-ico').textContent=isMafia?'🔪':'🌅';
   g('ov-title').textContent=isMafia?'MAFIA WINS':'VILLAGE WINS';
@@ -671,7 +900,7 @@ function showOver(winner,ps){
   g('ov-list').innerHTML=Object.entries(ps).map(([id,p])=>`<div class="prow${p.alive?'':' dead'}"><div class="pav">${ico[p.role]||'👤'}</div><div class="pname">${esc(p.name)}${id===myId?' <span class="tag t-you">YOU</span>':''}</div><span class="tag t-${p.role}">${(p.role||'?').toUpperCase()}</span>${p.alive?'':'<span style="font-size:.9rem;margin-left:4px">☠️</span>'}</div>`).join('');
 }
 
-function goHome(){ offAll(); room=rRef=myRole=null; amHost=false; round=1; selK=selD=selS=selV=null; myVoteDone=false; history.pushState({},'',location.pathname); show('home'); }
+function goHome(){offAll();clearTimer();clearAckTimer();room=rRef=myRole=null;amHost=false;startLock=false;round=1;selK=selD=selS=selV=null;myVoteDone=false;myAcked=false;nightActionDone=false;history.pushState({},'',location.pathname);show('home');}
 
 // ══════════════════════════════════════
 //  UTILS
